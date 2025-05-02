@@ -159,8 +159,9 @@ For remote Docker, the CTFd host must have SSH access to the remote server.
 - [x] Admin dashboard with team/user filtering
 - [x] Compatibility with the core-beta theme
 - [x] Monitor share flag 
-- [ ] Monitor detail on share flag 
-- [ ] Prevent container creation on solved challenge
+- [x] Monitor detail on share flag 
+- [x] Prevent container creation on solved challenge
+- [x] Add in Fame or shame 
 
 For more features and known issues, check the [open issues](https://github.com/phannhat17/CTFd-Docker-Plugin/issues).
 
@@ -172,20 +173,7 @@ For more features and known issues, check the [open issues](https://github.com/p
 
 Distributed under the MIT License. See `LICENSE.txt` for details.
 
-> This plugin is an upgrade of [andyjsmith's plugin](https://github.com/andyjsmith/CTFd-Docker-Plugin) with additional features.
-
-If there are licensing concerns, please reach out via email (contact below).
-
-[Back to top](#ctfd-docker-containers-plugin)
-
----
-
-## Contact
-
-**Phan Nhat**  
-- **Discord:** ftpotato  
-- **Email:** contact@phannhat.id.vn  
-- **Project Link:** [CTFd Docker Plugin](https://github.com/phannhat17/CTFd-Docker-Plugin)
+> This plugin is an upgrade of [andyjsmith's plugin](https://github.com/andyjsmith/CTFd-Docker-Plugin) with additional features from [phannhat17](https://github.com/phannhat17/CTFd-Docker-Plugin).
 
 [Back to top](#ctfd-docker-containers-plugin)
 

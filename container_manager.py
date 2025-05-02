@@ -176,7 +176,6 @@ class ContainerManager:
             else challenge.flag_prefix + challenge.flag_suffix
         )
 
-        # Set the memory and CPU limits for the container
         if self.settings.get("container_maxmemory"):
             try:
                 mem_limit = int(self.settings.get("container_maxmemory"))
@@ -214,7 +213,6 @@ class ContainerManager:
                 environment={"FLAG": flag},
                 **kwargs,
             )
-
             port = self.get_container_port(container.id)
             if port is None:
                 raise ContainerException("Could not get container port")
@@ -256,7 +254,7 @@ class ContainerManager:
                     return port[0]["HostPort"]
         except (KeyError, IndexError):
             return None
-
+        
     @run_command
     def get_images(self) -> "list[str]|None":
         try:
