@@ -36,7 +36,7 @@ To use this plugin, you should have:
 
 1. **Clone this repository:**
    ```bash
-   git clone https://github.com/phannhat17/CTFd-Docker-Plugin.git
+   git clone https://github.com/JerryyyTheDuck/CTFd-Docker-Plugin.git
    ```
 2. **Rename the folder:**
    ```bash
@@ -48,7 +48,6 @@ To use this plugin, you should have:
    ```
 
 [Back to top](#ctfd-docker-containers-plugin)
-
 ---
 
 ## Usage
@@ -163,7 +162,7 @@ For remote Docker, the CTFd host must have SSH access to the remote server.
 - [x] Prevent container creation on solved challenge
 - [x] Add in Fame or shame 
 
-For more features and known issues, check the [open issues](https://github.com/phannhat17/CTFd-Docker-Plugin/issues).
+For more features and known issues, check the [open issues](https://github.com/JerryyyTheDuck/CTFd-Docker-Plugin/issues).
 
 [Back to top](#ctfd-docker-containers-plugin)
 

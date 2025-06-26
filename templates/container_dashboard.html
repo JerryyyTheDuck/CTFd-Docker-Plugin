@@ -2,158 +2,308 @@
 
 {% block menu %}
 <li class="nav-item">
-	<a class="nav-link active" href="#">Instances</a>
+	<a class="nav-link active" href="#">
+		<i class="fas fa-server me-2"></i>Instances
+	</a>
 </li>
 <li class="nav-item">
-	<a class="nav-link" href="/containers/admin/settings">&#128279; Settings</a>
+	<a class="nav-link" href="/containers/admin/settings">
+		<i class="fas fa-cog me-2"></i>Settings
+	</a>
 </li>
 <li class="nav-item">
-	<a class="nav-link" href="/containers/admin/cheat">&#128279; Share flag</a>
+	<a class="nav-link" href="/containers/admin/cheat">
+		<i class="fas fa-share-alt me-2"></i>Share Flag
+	</a>
 </li>
 {% endblock %}
 
 {% block panel %}
-<div class="btn-group mb-2" role="group">
-	<button type="button" class="btn btn-outline-danger" data-toggle="tooltip" title="" id="instances-delete-button"
-		data-test-id="cm-button-destroy" data-original-title="Destroy Instances" onclick="bulkDeleteContainers()">
-		<i class="btn-fa fas fa-trash-alt"></i>
-	</button>
+<!-- Header Section -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<div>
+		<h2 class="h4 mb-1 text-dark">
+			<i class="fas fa-server text-primary me-2"></i>Container Instances
+		</h2>
+		<p class="text-muted mb-0">Manage running container instances and their configurations</p>
+	</div>
+	<div class="d-flex gap-2">
+		<button type="button" class="btn btn-outline-danger btn-sm" 
+				data-bs-toggle="tooltip" data-bs-placement="top" 
+				title="Delete selected containers" 
+				id="instances-delete-button"
+				onclick="bulkDeleteContainers()">
+			<i class="fas fa-trash-alt me-1"></i>
+			<span class="d-none d-md-inline">Delete Selected</span>
+		</button>
+		<button type="button" class="btn btn-outline-primary btn-sm" 
+				onclick="refreshData()">
+			<i class="fas fa-sync-alt me-1"></i>
+			<span class="d-none d-md-inline">Refresh</span>
+		</button>
+	</div>
 </div>
 
-<table class="table table-striped border">
-	<thead>
-		<tr>
-			<th class="border-right" data-checkbox>
-				<div class="form-check text-center" data-test-id="cm-checkbox-all">&nbsp; <input type="checkbox"
-						class="form-check-input" data-checkbox-all>
+<div class="row mb-3 justify-content-center">
+	<div class="col-md-3 col-sm-6 mb-3">
+		<div class="card border-0 shadow-sm h-100">
+			<div class="card-body text-center">
+				<div class="d-flex align-items-center justify-content-center mb-2">
+					<i class="fas fa-server text-primary fs-4" style="margin-right: 1rem;"></i>
+					<span class="h3 mb-0 text-dark" id="total-containers">{{ total_container_challenges if total_container_challenges else 0 }}</span>
 				</div>
-			</th>
-			<th class="sort-col text-center">
-				<b>Challenge</b>
-				</td>
-			<th class="sort-col text-center">
-				<b>Container ID</b>
-				</td>
-			<th class="sort-col text-center">
-				<b>Team/User</b>
-				</td>
-			<th class="text-center">
-				<b>Flag</b>
-				</td>
-			<th class="sort-col text-center">
-				<b>Created</b>
-				</td>
-			<th class="sort-col text-center">
-				<b>End</b>
-			</td>
-			<th class="text-center">
-				<b>Connect Info</b>
-				</td>
-			<th class="text-center">
-				<b>Destroy</b>
-				</td>
-		</tr>
-	</thead>
-	<tbody>
-		{% if containers %}
-		{% for c in containers %}
-		<tr>
-			<td class="border-right" data-checkbox>
-				<div class="form-check text-center">&nbsp; <input type="checkbox" class="form-check-input container-checkbox"
-						value="{{ c.container_id }}">
+				<p class="text-muted mb-0 small">Total Challenges Containers</p>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3 col-sm-6 mb-3">
+		<div class="card border-0 shadow-sm h-100">
+			<div class="card-body text-center">
+				<div class="d-flex align-items-center justify-content-center mb-2">
+					<i class="fas fa-server text-primary fs-4" style="margin-right: 1rem;"></i>
+
+					<span class="h3 mb-0 text-dark" id="running-containers">{{ containers|length if containers else 0 }}</span>
 				</div>
-			</td>
-			<td class="text-center">
-				<div class="form-check" id="challenge-id-div">
-					<a href="{{ url_for('admin.challenges_detail', challenge_id=c.challenge_id) }}">
-						{{ c.challenge.name }}
-					</a>
+				<p class="text-muted mb-0 small">Running Containers</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-3 col-sm-6 mb-3">
+		<div class="card border-0 shadow-sm h-100">
+			<div class="card-body text-center">
+				<div class="d-flex align-items-center justify-content-center mb-2">
+					<i class="fas fa-play-circle text-success fs-4" style="margin-right: 1rem;"></i>
+					<span class="h3 mb-0 text-dark" id="unique-challenges">{{ unique_spawned_challenges if unique_spawned_challenges else 0 }}</span>
 				</div>
-			</td>
-			<td class="text-center">
-				<div class="form-check text-center">
-					{{ c.container_id[:12] }}
-				</div>
-			</td>
-			<td class="text-center">
-				{% if c.team == None %}
-				<a href="{{ url_for('admin.users_detail', user_id=c.user_id) }}">
-					{{ c.user.name }}
-				</a>
-				{% else %}
-				<a href="{{ url_for('admin.teams_detail', team_id=c.team_id) }}">
-					{{ c.team.name }}
-				</a> {% endif %}
-			</td>
-			<td class="text-center">
-				<div class="form-check text-center">
-					{{ c.flag }}
-				</div>
-			</td>
-			<td class="text-center timestamp">
-				{{ c.timestamp }}
-			</td>
-			<td class="text-center timestamp">
-				{{ c.expires }}
-			</td>
-			<td class="text-center">
-				<div class="form-check text-center">
-					{{ c.challenge.connection_type }} - {{ c.port }}
-				</div>
-			</td>
-			<td class="text-center">
-				<button class="btn btn-link p-0 delete-instance" onclick="killContainer('{{ c.container_id }}')"
-					title="Destroy">
-					<i class="btn-fa fas fa-trash-alt"></i>
-				</button>
-			</td>
-		</tr>
-		{% endfor %}
-		{% endif %}
-	</tbody>
-</table>
+				<p class="text-muted mb-0 small">Unique Running Challenges</p>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Main Table Section -->
+<div class="card border-0 shadow-sm">
+	<div class="card-header bg-white border-bottom">
+		<div class="d-flex justify-content-between align-items-center">
+			<h5 class="mb-0 text-dark">
+				<i class="fas fa-list me-2"></i>Container List
+			</h5>
+		</div>
+	</div>
+	<div class="card-body p-0">
+		<div class="table-responsive">
+			<table class="table table-hover mb-0 align-middle">
+				<thead class="table-light">
+					<tr>
+						<th class="border-0 align-middle" style="width: 40px;">
+							<div class="form-check d-flex align-items-center justify-content-center m-0">
+								<input type="checkbox" class="form-check-input" data-checkbox-all>
+							</div>
+						</th>
+						<th class="border-0 text-dark fw-semibold">
+							<i class="fas fa-puzzle-piece me-1"></i>Challenge
+						</th>
+						<th class="border-0 text-dark fw-semibold d-none d-lg-table-cell">
+							<i class="fas fa-hashtag me-1"></i>Container ID
+						</th>
+						<th class="border-0 text-dark fw-semibold">
+							<i class="fas fa-user me-1"></i>Owner
+						</th>
+						<th class="border-0 text-dark fw-semibold d-none d-md-table-cell">
+							<i class="fas fa-flag me-1"></i>Flag
+						</th>
+						<th class="border-0 text-dark fw-semibold d-none d-lg-table-cell">
+							<i class="fas fa-clock me-1"></i>Created
+						</th>
+						<th class="border-0 text-dark fw-semibold d-none d-xl-table-cell">
+							<i class="fas fa-hourglass-end me-1"></i>Expires
+						</th>
+						<th class="border-0 text-dark fw-semibold">
+							<i class="fas fa-plug me-1"></i>Connection
+						</th>
+						<th class="border-0 text-dark fw-semibold" style="width: 80px;">
+							<i class="fas fa-cog me-1"></i>Actions
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% if containers %}
+					{% for c in containers %}
+					<tr>
+						<td class="align-middle">
+							<div class="form-check d-flex align-items-center justify-content-center m-0">
+								<input type="checkbox" class="form-check-input container-checkbox" value="{{ c.container_id }}">
+							</div>
+						</td>
+						<td>
+							<a href="{{ url_for('admin.challenges_detail', challenge_id=c.challenge_id) }}" class="fw-semibold text-dark text-decoration-none">
+								{{ c.challenge.name }}
+							</a>
+						</td>
+						<td class="d-none d-lg-table-cell">
+							<code class="small bg-light px-2 py-1 rounded">{{ c.container_id[:12] }}</code>
+						</td>
+						<td>
+							<div class="d-flex align-items-center gap-2">
+								<i class="fas fa-user text-info fa-fw"></i>
+								{% if c.team == None %}
+									<a href="{{ url_for('admin.users_detail', user_id=c.user_id) }}" class="fw-semibold text-dark text-decoration-none">
+										{{ c.user.name }}
+									</a>
+								{% else %}
+									<a href="{{ url_for('admin.teams_detail', team_id=c.team_id) }}" class="fw-semibold text-dark text-decoration-none">
+										{{ c.team.name }}
+									</a>
+								{% endif %}
+							</div>
+						</td>
+						<td class="d-none d-md-table-cell">
+							<code class="small bg-light px-2 py-1 rounded text-break">{{ c.flag }}</code>
+						</td>
+						<td class="d-none d-lg-table-cell">
+							<div class="timestamp small text-muted">{{ c.timestamp }}</div>
+						</td>
+						<td class="d-none d-xl-table-cell">
+							<div class="timestamp small text-muted">{{ c.expires }}</div>
+						</td>
+						<td>
+							<div class="d-flex align-items-center gap-2">
+								<i class="fas fa-plug text-success fa-fw"></i>
+								<span class="badge bg-success">{{ c.challenge.connection_type }}</span>
+								<code class="small bg-light px-2 py-1 rounded">{{ c.port }}</code>
+							</div>
+						</td>
+						<td>
+							<div class="btn-group btn-group-sm" role="group">
+								<button class="btn btn-outline-danger" 
+										onclick="killContainer('{{ c.container_id }}')"
+										data-bs-toggle="tooltip" data-bs-placement="top" Container ID
+										title="Destroy Container">
+									<i class="fas fa-trash-alt"></i>
+								</button>
+								<button class="btn btn-outline-primary" 
+										onclick="copyConnectionInfo('{{ c.container_id }}', '{{ c.port }}')"
+										data-bs-toggle="tooltip" data-bs-placement="top" 
+										title="Copy Connection Info">
+									<i class="fas fa-copy"></i>
+								</button>
+							</div>
+						</td>
+					</tr>
+					{% endfor %}
+					{% else %}
+					<tr>
+						<td colspan="9" class="text-center py-5">
+							<div class="text-muted">
+								<i class="fas fa-inbox fa-3x mb-3"></i>
+								<h5>No containers running</h5>
+								<p class="mb-0">No container instances are currently active.</p>
+							</div>
+						</td>
+					</tr>
+					{% endif %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
 {% include "config/container_status.html" %}
 
 {% endblock %}
 
-
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-	document.addEventListener("DOMContentLoaded", function () {
-		function convertToGMT7() {
-			document.querySelectorAll(".timestamp").forEach(element => {
-				let originalTime = element.innerText.trim(); // Get the timestamp directly from the cell
-				if (!originalTime) return;
 
-				// Convert to Date object
-				let dateObj = new Date(originalTime * 1000);
-				// Convert to GMT+7 manually
-				let utcTime = dateObj.getTime() + dateObj.getTimezoneOffset() * 60000; // Convert to UTC
-				let gmt7Date = new Date(utcTime + (7 * 3600000)); // Add 7 hours
-
-				// Extract parts
-				let hours = String(gmt7Date.getHours()).padStart(2, '0');
-				let minutes = String(gmt7Date.getMinutes()).padStart(2, '0');
-				let seconds = String(gmt7Date.getSeconds()).padStart(2, '0');
-				let day = String(gmt7Date.getDate()).padStart(2, '0');
-				let month = String(gmt7Date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-				let year = gmt7Date.getFullYear();
-
-				// Format as "HH:mm:ss DD/MM/YYYY"
-				let formattedTime = `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
-
-				// Update the element with the formatted time
-				element.innerText = formattedTime;
-			});
-		}
-
+	const observer = new MutationObserver(() => {
 		convertToGMT7();
 	});
 
-	function killContainer(container_id) {
-		var path = "/containers/admin/api/kill";
+	observer.observe(document.body, {
+		childList: true,
+		subtree: true
+	});
 
-		fetch(path, {
+
+
+	document.addEventListener("DOMContentLoaded", function () {
+		var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+		var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+			return new bootstrap.Tooltip(tooltipTriggerEl);
+		});
+
+		
+		convertToGMT7();
+		updateStats();
+	});
+	function convertToGMT7() {
+		console.log("Converting timestamps...");
+		document.querySelectorAll(".timestamp").forEach(element => {
+			let originalTime = element.innerText.trim();
+			if (!originalTime || isNaN(originalTime)) return;
+
+			let dateObj = new Date(parseInt(originalTime, 10) * 1000);
+
+			let utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
+			let gmt7 = new Date(utc + (7 * 60 * 60 * 1000));
+
+			let day = String(gmt7.getDate()).padStart(2, '0');
+			let month = String(gmt7.getMonth() + 1).padStart(2, '0');
+			let year = gmt7.getFullYear();
+			let hours = String(gmt7.getHours()).padStart(2, '0');
+			let minutes = String(gmt7.getMinutes()).padStart(2, '0');
+			let seconds = String(gmt7.getSeconds()).padStart(2, '0');
+
+			let formatted = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+			element.innerText = formatted;
+		});
+	}
+	
+	function updateStats() {
+		const runningCount = document.querySelectorAll('tr').length - 1;
+		document.getElementById('running-containers').textContent = runningCount;
+		
+		const userLinks = document.querySelectorAll('td:nth-child(4) a');
+		const uniqueUsers = new Set();
+		userLinks.forEach(link => uniqueUsers.add(link.textContent.trim()));
+		document.getElementById('unique-users').textContent = uniqueUsers.size;
+		
+		// Update unique challenges count
+		const challengeLinks = document.querySelectorAll('td:nth-child(2) a');
+		const uniqueChallenges = new Set();
+		challengeLinks.forEach(link => uniqueChallenges.add(link.textContent.trim()));
+		document.getElementById('unique-challenges').textContent = uniqueChallenges.size;
+	}
+
+	function refreshData() {
+		window.location.reload();
+	}
+
+	function copyConnectionInfo(id, port) {
+		const connectionString = `docker exec -it ${id} /bin/bash`;
+		navigator.clipboard.writeText(connectionString).then(() => {
+			const button = event.target.closest('button');
+			const originalIcon = button.innerHTML;
+			button.innerHTML = '<i class="fas fa-check"></i>';
+			button.classList.remove('btn-outline-primary');
+			button.classList.add('btn-success');
+			
+			setTimeout(() => {
+				button.innerHTML = originalIcon;
+				button.classList.remove('btn-success');
+				button.classList.add('btn-outline-primary');
+			}, 1000);
+		});
+	}
+
+	function killContainer(container_id) {
+		if (!confirm('Are you sure you want to destroy this container?')) {
+			return;
+		}
+
+		fetch("/containers/admin/api/kill", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -162,44 +312,19 @@
 			},
 			body: JSON.stringify({ container_id: container_id }),
 		})
-			.then((response) => response.json())
-			.then((data) => {
-				if (data.success == undefined) {
-					purgeButton.removeAttribute("disabled");
-				} else {
-					window.location.reload();
-				}
-				console.log(data);
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-			});
-	}
-
-	function container_renew(container_id) {
-		var path = "/containers/api/admin/restart";
-
-		fetch(path, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"Accept": "application/json",
-				"CSRF-Token": init.csrfNonce
-			},
-			body: JSON.stringify({ container_id: container_id }),
+		.then((response) => response.json())
+		.then((data) => {
+			if (data.success) {
+				showNotification('Container destroyed successfully', 'success');
+				setTimeout(() => window.location.reload(), 1000);
+			} else {
+				showNotification('Error destroying container: ' + (data.error || 'Unknown error'), 'error');
+			}
 		})
-			.then((response) => response.json())
-			.then((data) => {
-				if (data.success == undefined) {
-					purgeButton.removeAttribute("disabled");
-				} else {
-					window.location.reload();
-				}
-				console.log(data);
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-			});
+		.catch((error) => {
+			console.error("Error:", error);
+			showNotification('Error destroying container', 'error');
+		});
 	}
 
 	function bulkDeleteContainers() {
@@ -209,12 +334,13 @@
 		});
 
 		if (selectedContainers.length === 0) {
-			alert("Please select at least one container to delete.");
+			showNotification('Please select at least one container to delete', 'warning');
 			return;
 		}
 
-		let confirmDelete = confirm(`Are you sure you want to delete ${selectedContainers.length} container(s)?`);
-		if (!confirmDelete) return;
+		if (!confirm(`Are you sure you want to delete ${selectedContainers.length} container(s)?`)) {
+			return;
+		}
 
 		fetch("/containers/admin/api/purge", {
 			method: "POST",
@@ -225,17 +351,77 @@
 			},
 			body: JSON.stringify({ container_ids: selectedContainers }),
 		})
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					window.location.reload();
-				} else {
-					alert("Error deleting containers: " + (data.error || "Unknown error"));
-				}
-			})
-			.catch(error => {
-				console.error("Error:", error);
-			});
+		.then(response => response.json())
+		.then(data => {
+			if (data.success) {
+				showNotification(`Successfully deleted ${selectedContainers.length} container(s)`, 'success');
+				setTimeout(() => window.location.reload(), 1000);
+			} else {
+				showNotification('Error deleting containers: ' + (data.error || "Unknown error"), 'error');
+			}
+		})
+		.catch(error => {
+			console.error("Error:", error);
+			showNotification('Error deleting containers', 'error');
+		});
+	}
+
+	function showNotification(message, type) {
+		Swal.fire({
+			icon: type === 'error' ? 'error' : (type === 'success' ? 'success' : (type === 'warning' ? 'warning' : 'info')),
+			title: message,
+			showConfirmButton: false,
+			timer: 2500,
+			position: 'top-end',
+			toast: true
+		});
 	}
 </script>
+
+<style>
+.card {
+	transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+	transform: translateY(-2px);
+}
+
+.table > :not(caption) > * > * {
+	padding: 1rem 0.75rem;
+}
+
+.btn-group-sm > .btn {
+	padding: 0.25rem 0.5rem;
+}
+
+.bg-opacity-10 {
+	--bs-bg-opacity: 0.1;
+}
+
+.align-middle > td, .align-middle > th {
+	vertical-align: middle !important;
+}
+
+@media (max-width: 768px) {
+	.table-responsive {
+		font-size: 0.875rem;
+	}
+	
+	.btn-group-sm > .btn {
+		padding: 0.375rem 0.75rem;
+	}
+}
+
+@media (max-width: 576px) {
+	.d-flex.justify-content-between {
+		flex-direction: column;
+		gap: 1rem;
+	}
+	
+	.d-flex.gap-2 {
+		justify-content: center;
+	}
+}
+</style>
 {% endblock %}

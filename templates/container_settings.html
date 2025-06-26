@@ -3,92 +3,94 @@
 
 {% block menu %}
 <li class="nav-item">
-    <a class="nav-link" href="/containers/admin/dashboard">&#128279; Instances</a>
+    <a class="nav-link" href="/containers/admin/dashboard"><i class="fas fa-server me-2"></i>Instances</a>
 </li>
 <li class="nav-item">
-    <a class="nav-link active" data-toggle="pill" href="#settings">Settings</a>
+    <a class="nav-link active" data-toggle="pill" href="#settings"><i class="fas fa-cog me-2"></i>Settings</a>
 </li>
 <li class="nav-item">
-    <a class="nav-link" href="/containers/admin/cheat">&#128279; Share flag</a>
+    <a class="nav-link" href="/containers/admin/cheat"><i class="fas fa-share-alt me-2"></i>Share Flag</a>
 </li>
 {% endblock %}
 
 {% block panel %}
 {% include "components/errors.html" %}
-<div role="tabpanel" class="tab-pane config-section active" id="settings">
-    <form method="post" action="/containers/admin/api/settings" accept-charset="utf-8" autocomplete="off" role="form"
-        class="form-horizontal" enctype="multipart/form-data">
-        <div class="tab-content">
-            <div class="tab-pane fade show active" id="docker" role="tabpanel" aria-autocomplete="none">
-                <h5>Instructions</h5>
-                <p class="form-text text-muted">
-                    The Base URL should be the local socket address of the Docker daemon, i.e. <code>unix://var/run/docker.sock</code>, or it can be a remote SSH address, e.g. <code>ssh://root@example.com</code>. In either case, sudo will not be executed. For a local socket, the user CTFd is running as should have permissions for Docker; for SSH connections, the SSH user in the Base URL should be root or have Docker permissions.
-                </p>
-
-                <div class="form-group">
-                    <label for="docker_base_url">
-                        Base URL (see instructions)
-                    </label>
-                    <input class="form-control" type="text" name="docker_base_url" id="docker_base_url"
-                        placeholder="E.g. unix://var/run/docker.sock or ssh://root@example.com"
-                        value='{{ settings.docker_base_url|default("") }}' />
-                </div>
-
-                <div class="form-group">
-                    <label for="docker_hostname">
-                        Hostname for Docker Host (this is what's displayed to the user in the connection string)
-                    </label>
-                    <input class="form-control" type="text" name="docker_hostname" id="docker_hostname"
-                        placeholder="e.g. example.com or 10.0.1.8" value='{{ settings.docker_hostname|default("") }}' />
-                </div>
-                <div class="form-group">
-                    <label for="container_expiration">
-                        Container Expiration in Minutes (how long a container will last before it's killed; 0 = never)
-                    </label>
-                    <input class="form-control" type="text" name="container_expiration" id="container_expiration"
-                        placeholder="e.g. 30" value='{{ settings.container_expiration|default("") }}' />
-                </div>
-                <div class="form-group">
-                    <label for="max_containers">
-                        Max Containers Per User/Team
-                    </label>
-                    <input class="form-control" type="number" name="max_containers" id="max_containers"
-                        placeholder="e.g. 3" value='{{ settings.max_containers|default("3") }}' />
-                </div>
-                <div class="form-group">
-                    <label for="container_maxmemory">
-                        Maximum per-container memory usage (in MB)
-                    </label>
-                    <input class="form-control" type="number" name="container_maxmemory" id="container_maxmemory"
-                        placeholder="e.g. 1000" value='{{ settings.container_maxmemory|default("") }}' />
-                </div>
-                <div class="form-group">
-                    <label for="container_maxcpu">
-                        Maximum per-container CPUs (float, e.g 1.5 means 1.5 cores at most)
-                    </label>
-                    <input class="form-control" type="text" name="container_maxcpu" id="container_maxcpu"
-                        placeholder="e.g. 1.5" value='{{ settings.container_maxcpu|default("") }}' />
-                </div>
-
-                <div class="form-group">
-                    <label for="fame_or_shame">
-                        Fame or Shame (Enable this for announcing cheaters)
-                    </label>
-                    <select class="form-control" name="fame_or_shame" id="fame_or_shame">
-                        <option value="0" {% if settings.fame_or_shame == 0 %}selected{% endif %}>Disable</option>
-                        <option value="1" {% if settings.fame_or_shame == 1 %}selected{% endif %}>Enable</option>
-                    </select>
-                </div>
-
-                <div class="submit-row float-right">
-                    <button type="submit" tabindex="0" class="btn btn-md btn-primary btn-outlined">
-                        Submit
-                    </button>
-                    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
-                </div>
+<div class="card border-0 shadow-sm mb-4 rounded-4">
+    <div class="card-header bg-white border-bottom rounded-top-4">
+        <h5 class="mb-0 text-dark"><i class="fas fa-cog me-2"></i>Container Settings</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="alert alert-info mb-4 px-4 py-3 rounded-3" style="background:rgba(0,123,255,0.07); border:1px solid #b6e0fe;">
+            <div class="fw-semibold mb-1"><i class="fas fa-info-circle me-2"></i>Instructions</div>
+            <div class="small">
+                The Base URL should be the local socket address of the Docker daemon, i.e. <code>unix://var/run/docker.sock</code>, or it can be a remote SSH address, e.g. <code>ssh://root@example.com</code>.<br>
+                In either case, <b>sudo will not be executed</b>. For a local socket, the user CTFd is running as should have permissions for Docker; for SSH connections, the SSH user in the Base URL should be root or have Docker permissions.
             </div>
         </div>
-    </form>
-    {% include "config/container_status.html" %}
+        <form method="post" action="/containers/admin/api/settings" accept-charset="utf-8" autocomplete="off" role="form" enctype="multipart/form-data">
+            <div class="mb-4">
+                <h6 class="fw-bold text-primary mb-3">Docker Connection</h6>
+                <div class="form-floating mb-3">
+                    <label for="docker_base_url">Base URL</label>
+                    <div>
+                        <small >Docker connection URL. This is the URL of the Docker host. It is used to connect to the Docker host.</small>
+                    </div>
+                    <input type="text" class="form-control rounded-3 bg-light border-0" id="docker_base_url" name="docker_base_url" placeholder="Base URL" value='{{ settings.docker_base_url|default("") }}'>
+                </div>
+                <div class="form-floating mb-3">
+                    <label for="docker_hostname">Hostname for Docker Host</label>
+                    <div>
+                        <small >This is the hostname of the Docker host. It is used to connect to the Docker host.</small>
+                    </div>
+                    <input type="text" class="form-control rounded-3 bg-light border-0" id="docker_hostname" name="docker_hostname" placeholder="Hostname for Docker Host" value='{{ settings.docker_hostname|default("") }}'>
+                </div>
+            </div>
+            <div class="mb-4">
+                <h6 class="fw-bold text-primary mb-3">Container Limits</h6>
+                <div class="form-floating mb-3">
+                    <label for="container_expiration">Container Expiration (minutes)</label>
+                    <div>
+                        <small >Miniute to expire, 0 for no expiration</small>
+                    </div>
+                    <input type="text" class="form-control rounded-3 bg-light border-0" id="container_expiration" name="container_expiration" placeholder="Container Expiration (minutes)" value='{{ settings.container_expiration|default("") }}'>
+                </div>
+                <div class="form-floating mb-3">
+                    <label for="max_containers">Max Containers Per User/Team</label>
+                    <input type="number" class="form-control rounded-3 bg-light border-0" id="max_containers" name="max_containers" placeholder="Max Containers Per User/Team" value='{{ settings.max_containers|default("3") }}'>
+                </div>
+                <div class="form-floating mb-3">
+                    <label for="container_maxmemory">Max Memory (MB)</label>
+                    <input type="number" class="form-control rounded-3 bg-light border-0" id="container_maxmemory" name="container_maxmemory" placeholder="Max Memory (MB)" value='{{ settings.container_maxmemory|default("") }}'>
+                </div>
+                <div class="form-floating mb-3">
+                    <label for="container_maxcpu">Max CPUs (float)</label>
+                    <div>
+                        <small >EG: 1.0, 2.0, 3.0</small>
+                    </div>
+                    <input type="text" class="form-control rounded-3 bg-light border-0" id="container_maxcpu" name="container_maxcpu" placeholder="Max CPUs (float)" value='{{ settings.container_maxcpu|default("") }}'>
+                </div>
+            </div>
+            <div class="mb-4">
+                <h6 class="fw-bold text-primary mb-3">Other Settings</h6>
+                <div class="form-floating mb-3">
+                    <label for="fame_or_shame">Fame or Shame</label>
+                    <div>
+                        <small >Enable to notify when a user or team submit a share flag</small>
+                    </div>
+                    <select class="form-select rounded-3 bg-light border-0" id="fame_or_shame" name="fame_or_shame">
+                        <option value="0" {% if (settings.fame_or_shame|default(0))|int == 0 %}selected{% endif %}>Disable</option>
+                        <option value="1" {% if settings.fame_or_shame|int == 1 %}selected{% endif %}>Enable</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-grid d-md-flex justify-content-md-end mt-4">
+                <button type="submit" tabindex="0" class="btn btn-primary btn-lg rounded-3 px-5 shadow-sm">
+                    <i class="fas fa-save me-2"></i>Save Settings
+                </button>
+                <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+            </div>
+        </form>
+    </div>
 </div>
+{% include "config/container_status.html" %}
 {% endblock %}

@@ -15,6 +15,8 @@ from CTFd.models import db
 from .models import ContainerInfoModel, ContainerFlagModel, ContainerFlagModel
 
 
+
+
 def generate_random_flag(challenge):
     """Generate a random flag with the given length and format"""
     flag_length = challenge.random_flag_length
@@ -37,6 +39,36 @@ class ContainerException(Exception):
             return self.message
         else:
             return "Unknown Container Exception"
+
+
+def run_command(func):
+    def wrapper_run_command(self, *args, **kwargs):
+        # If client is not initialized, try to initialize it
+        if self.client is None:
+            try:
+                self.initialize_connection(self.settings, self.app)
+            except Exception as e:
+                raise ContainerException("Docker is not connected: " + str(e))
+        try:
+            if self.client is None:
+                raise ContainerException("Docker is not connected")
+            if self.client.ping():
+                return func(self, *args, **kwargs)
+        except (
+            paramiko.ssh_exception.SSHException,
+            ConnectionError,
+            requests.exceptions.ConnectionError,
+        ) as e:
+            # Try to reconnect before failing
+            try:
+                self.initialize_connection(self.settings, self.app)
+            except Exception as e2:
+                pass
+            raise ContainerException(
+                "Docker connection was lost. Please try your request again later."
+            )
+
+    return wrapper_run_command
 
 
 class ContainerManager:
@@ -103,7 +135,7 @@ class ContainerManager:
             self.expiration_scheduler = BackgroundScheduler()
             self.expiration_scheduler.add_job(
                 func=self.kill_expired_containers,
-                args=(app,),
+                # args=(app,),
                 trigger="interval",
                 seconds=EXPIRATION_CHECK_INTERVAL,
             )
@@ -112,38 +144,9 @@ class ContainerManager:
             # Shut down the scheduler when exiting the app
             atexit.register(lambda: self.expiration_scheduler.shutdown())
 
-    # TODO: Fix this cause it doesn't work
-    def run_command(func):
-        def wrapper_run_command(self, *args, **kwargs):
-            if self.client is None:
-                try:
-                    self.__init__(self.settings, self.app)
-                except:
-                    raise ContainerException("Docker is not connected")
-            try:
-                if self.client is None:
-                    raise ContainerException("Docker is not connected")
-                if self.client.ping():
-                    return func(self, *args, **kwargs)
-            except (
-                paramiko.ssh_exception.SSHException,
-                ConnectionError,
-                requests.exceptions.ConnectionError,
-            ) as e:
-                # Try to reconnect before failing
-                try:
-                    self.__init__(self.settings, self.app)
-                except:
-                    pass
-                raise ContainerException(
-                    "Docker connection was lost. Please try your request again later."
-                )
-
-        return wrapper_run_command
-
     @run_command
-    def kill_expired_containers(self, app: Flask):
-        with app.app_context():
+    def kill_expired_containers(self):
+        with self.app.app_context():
             containers: "list[ContainerInfoModel]" = ContainerInfoModel.query.all()
 
             for container in containers:
@@ -248,12 +251,57 @@ class ContainerManager:
 
     @run_command
     def get_container_port(self, container_id: str) -> "str|None":
-        try:
-            for port in list(self.client.containers.get(container_id).ports.values()):
-                if port is not None:
-                    return port[0]["HostPort"]
-        except (KeyError, IndexError):
-            return None
+        max_retries = 10
+        retry_delay = 0.5
+        
+        for attempt in range(max_retries):
+            try:
+                container = self.client.containers.get(container_id)
+                
+                # Wait for container to be running
+                if container.status != "running":
+                    print(f"[DEBUG] Container {container_id} status: {container.status} (attempt {attempt + 1}/{max_retries})")
+                    if attempt < max_retries - 1:  # Don't sleep on last attempt
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print(f"[DEBUG] Container {container_id} failed to start after {max_retries} attempts")
+                        return None
+                
+                # Check if ports are available
+                if not container.ports:
+                    print(f"[DEBUG] Container {container_id} has no ports yet (attempt {attempt + 1}/{max_retries})")
+                    if attempt < max_retries - 1:  # Don't sleep on last attempt
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print(f"[DEBUG] Container {container_id} ports never became available after {max_retries} attempts")
+                        return None
+                
+                # Get the host port
+                for port in list(container.ports.values()):
+                    if port is not None and len(port) > 0:
+                        host_port = port[0]["HostPort"]
+                        print(f"[DEBUG] Container {container_id} got port: {host_port}")
+                        return host_port
+                
+                # If we get here, no ports were found
+                print(f"[DEBUG] Container {container_id} has ports but none are valid (attempt {attempt + 1}/{max_retries})")
+                if attempt < max_retries - 1:  # Don't sleep on last attempt
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    return None
+                    
+            except (KeyError, IndexError, docker.errors.NotFound) as e:
+                print(f"[DEBUG] Container {container_id} error on attempt {attempt + 1}/{max_retries}: {e}")
+                if attempt < max_retries - 1:  # Don't sleep on last attempt
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    return None
+        
+        return None
         
     @run_command
     def get_images(self) -> "list[str]|None":

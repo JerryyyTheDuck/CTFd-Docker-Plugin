@@ -2,127 +2,113 @@
 
 {% block menu %}
 <li class="nav-item">
-    <a class="nav-link" href="/containers/admin/dashboard">&#128279; Instances</a>
+    <a class="nav-link" href="/containers/admin/dashboard"><i class="fas fa-server me-2"></i>Instances</a>
 </li>
 <li class="nav-item">
-    <a class="nav-link" href="/containers/admin/settings">&#128279; Settings</a>
+    <a class="nav-link" href="/containers/admin/settings"><i class="fas fa-cog me-2"></i>Settings</a>
 </li>
 <li class="nav-item">
-    <a class="nav-link active" data-toggle="pill" href="#flag">Share flag</a>
+    <a class="nav-link active" data-toggle="pill" href="#flag"><i class="fas fa-share-alt me-2"></i>Share Flag</a>
 </li>
 {% endblock %}
 
 {% block panel %}
 {% include "components/errors.html" %}
-{% if cheat_logs|length == 0 %}
-<p>No cheating events recorded yet.</p>
-{% else %}
-<table class="table table-striped border">
-    <thead>
-        <tr>
-            <th class="sort-col text-center">
-                <b>Time</b>
-                </td>
-            <th class="sort-col text-center">
-                <b>Challenge</b>
-                </td>
-            <th class="sort-col text-center">
-                <b>Original Owner</b>
-                </td>
-            <th class="sort-col text-center">
-                <b>Second Submitter</b>
-                </td>
-            <th class="sort-col text-center">
-                <b>Flag</b>
-                </td>
-        </tr>
-    </thead>
-    <tbody>
-        {% for log in cheat_logs %}
-        <tr>
-            <td class="text-center timestamp">
-                {{ log.timestamp }}
-            </td>
-            <td class="text-center">
-                <div class="form-check" id="challenge-id-div">
-                    <a href="{{ url_for('admin.challenges_detail', challenge_id=log.challenge_id) }}">
-                        {{ log.challenge.name }}
-                    </a>
-                </div>
-            </td>
-            <td class="text-center">
-                <div class="form-check text-center">
-                    {% if log.original_team_id %}
-                    <a href="{{ url_for('admin.teams_detail', team_id=log.original_team_id) }}">
-                        {{ log.original_team.name }}
-                    </a>
-                    {% elif log.original_user_id %}
-                    <a href="{{ url_for('admin.users_detail', user_id=log.original_user_id) }}">
-                        {{ log.original_user.name }}
-                    </a>
-                    {% else %}
-                    Unknown
-                    {% endif %}
-                </div>
-            </td>
-            <td class="text-center">
-                {% if log.second_team_id %}
-                <a href="{{ url_for('admin.teams_detail', team_id=log.second_team_id) }}">
-                    {{ log.second_team.name }}
-                </a>
-                {% elif log.second_user_id %}
-                <a href="{{ url_for('admin.users_detail', user_id=log.second_user_id) }}">
-					{{ log.second_user.name }}
-				</a>
-                {% else %}
-                Unknown
-                {% endif %}
-            </td>
-            <td>
-                {{ log.reused_flag }}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom">
+        <h5 class="mb-0 text-dark"><i class="fas fa-flag me-2"></i>Cheat Log</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if cheat_logs|length == 0 %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-inbox fa-3x mb-3"></i>
+            <h5>No cheating events recorded yet.</h5>
+            <p class="mb-0">No one has reused a flag or cheated so far.</p>
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center"><i class="fas fa-clock me-1"></i>Time</th>
+                        <th class="text-center"><i class="fas fa-puzzle-piece me-1"></i>Challenge</th>
+                        <th class="text-center"><i class="fas fa-user-shield me-1"></i>Original Owner</th>
+                        <th class="text-center"><i class="fas fa-user-secret me-1"></i>Second Submitter</th>
+                        <th class="text-center"><i class="fas fa-flag me-1"></i>Flag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in cheat_logs %}
+                    <tr>
+                        <td class="text-center timestamp small text-muted">{{ log.timestamp }}</td>
+                        <td class="text-center">
+                            <a href="{{ url_for('admin.challenges_detail', challenge_id=log.challenge_id) }}" class="fw-semibold text-dark text-decoration-none">
+                                {{ log.challenge.name }}
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            {% if log.original_team_id %}
+                            <a href="{{ url_for('admin.teams_detail', team_id=log.original_team_id) }}" class="fw-semibold text-dark text-decoration-none">
+                                {{ log.original_team.name }}
+                            </a>
+                            <div class="small text-muted">Team</div>
+                            {% elif log.original_user_id %}
+                            <a href="{{ url_for('admin.users_detail', user_id=log.original_user_id) }}" class="fw-semibold text-dark text-decoration-none">
+                                {{ log.original_user.name }}
+                            </a>
+                            <div class="small text-muted">User</div>
+                            {% else %}
+                            <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if log.second_team_id %}
+                            <a href="{{ url_for('admin.teams_detail', team_id=log.second_team_id) }}" class="fw-semibold text-dark text-decoration-none">
+                                {{ log.second_team.name }}
+                            </a>
+                            <div class="small text-muted">Team</div>
+                            {% elif log.second_user_id %}
+                            <a href="{{ url_for('admin.users_detail', user_id=log.second_user_id) }}" class="fw-semibold text-dark text-decoration-none">
+                                {{ log.second_user.name }}
+                            </a>
+                            <div class="small text-muted">User</div>
+                            {% else %}
+                            <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center"><code class="small bg-light px-2 py-1 rounded text-break">{{ log.reused_flag }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% include "config/container_status.html" %}
-
-{% endif %}
 {% endblock %}
-
 
 {% block scripts %}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         function convertToGMT7() {
             document.querySelectorAll(".timestamp").forEach(element => {
-                let originalTime = element.innerText.trim(); // Get the timestamp directly from the cell
+                let originalTime = element.innerText.trim();
                 if (!originalTime) return;
-
-                // Convert to Date object
                 let dateObj = new Date(originalTime * 1000);
-                // Convert to GMT+7 manually
-                let utcTime = dateObj.getTime() + dateObj.getTimezoneOffset() * 60000; // Convert to UTC
-                let gmt7Date = new Date(utcTime + (7 * 3600000)); // Add 7 hours
-
-                // Extract parts
+                let utcTime = dateObj.getTime() + dateObj.getTimezoneOffset() * 60000;
+                let gmt7Date = new Date(utcTime + (7 * 3600000));
                 let hours = String(gmt7Date.getHours()).padStart(2, '0');
                 let minutes = String(gmt7Date.getMinutes()).padStart(2, '0');
                 let seconds = String(gmt7Date.getSeconds()).padStart(2, '0');
                 let day = String(gmt7Date.getDate()).padStart(2, '0');
-                let month = String(gmt7Date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+                let month = String(gmt7Date.getMonth() + 1).padStart(2, '0');
                 let year = gmt7Date.getFullYear();
-
-                // Format as "HH:mm:ss DD/MM/YYYY"
                 let formattedTime = `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
-
-                // Update the element with the formatted time
                 element.innerText = formattedTime;
             });
         }
-
         convertToGMT7();
     });
-
 </script>
 {% endblock %}

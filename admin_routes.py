@@ -1,5 +1,5 @@
 import json
-from flask import Blueprint, request, jsonify, render_template, url_for, redirect, Flask, flash
+from flask import Blueprint, request, jsonify, render_template, url_for, redirect, Flask, flash, current_app
 from CTFd.models import db
 from .models import ContainerChallengeModel, ContainerInfoModel, ContainerSettingsModel, ContainerCheatLog
 from .container_manager import ContainerManager, ContainerException
@@ -36,10 +36,15 @@ def route_containers_dashboard():
         except ContainerException:
             running_containers[i].is_running = False
 
+    total_container_challenges = ContainerChallengeModel.query.count()
+    unique_spawned_challenges = len(set(c.challenge_id for c in running_containers))
+
     return render_template(
         "container_dashboard.html",
         containers=running_containers,
         connected=connected,
+        total_container_challenges=total_container_challenges,
+        unique_spawned_challenges=unique_spawned_challenges,
     )
 
 @admin_bp.route("/settings", methods=["GET"])
@@ -51,9 +56,23 @@ def route_containers_settings():
     except ContainerException:
         pass
 
+    # Ensure all required settings exist with defaults
+    required_settings = {
+        "docker_base_url": "unix://var/run/docker.sock",
+        "docker_hostname": "127.0.0.1",
+        "container_expiration": "0",
+        "container_maxmemory": "512",
+        "container_maxcpu": "1.0",
+        "max_containers": "3",
+        "fame_or_shame": "0"
+    }
+    
+    # Merge with existing settings, using defaults for missing keys
+    settings = {**required_settings, **container_manager.settings}
+
     return render_template(
         "container_settings.html",
-        settings=container_manager.settings,
+        settings=settings,
         connected=connected,
     )
 
@@ -114,7 +133,7 @@ def route_update_settings():
 
     if container_manager.settings.get("docker_base_url") is not None:
         try:
-            container_manager.initialize_connection(container_manager.settings, Flask)
+            container_manager.initialize_connection(container_manager.settings, current_app._get_current_object())
         except ContainerException as err:
             flash(str(err), "error")
             return redirect(url_for(".route_containers_settings"))

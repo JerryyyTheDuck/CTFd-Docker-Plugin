@@ -5,7 +5,8 @@ import json
 import datetime
 import math
 
-from flask import Blueprint, request, Flask, render_template, url_for, redirect, flash
+from flask import Blueprint, request, Flask, render_template, url_for, redirect, flash, current_app
+from .container_manager import ContainerManager
 
 from CTFd.models import db, Solves, Teams, Users
 from CTFd.plugins import register_plugin_assets_directory
@@ -18,8 +19,21 @@ from .user_routes import containers_bp, set_container_manager as set_user_manage
 from .helpers import *
 from CTFd.utils.user import get_current_user
 
-settings = json.load(open(get_settings_path()))
 
+
+settings = json.load(open(get_settings_path()))
+    
+# import os
+
+# if os.environ.get("CTFD_DEBUG") == "true":
+#     import debugpy
+#     try:
+#         debugpy.listen(("0.0.0.0", 5678))
+#         print("✅ Waiting for VSCode debugger to attach on port 5678...")
+#         debugpy.wait_for_client()  # Optional: comment this if you want CTFd to load immediately
+#     except Exception as e:
+#         print(f"❌ Failed to start debugpy: {e}")    
+    
 class ContainerChallenge(BaseChallenge):
     id = settings["plugin-info"]["id"]
     name = settings["plugin-info"]["name"]
