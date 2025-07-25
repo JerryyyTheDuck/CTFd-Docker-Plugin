@@ -136,6 +136,11 @@ class ContainerChallenge(BaseChallenge):
                 value = float(value)
             setattr(challenge, attr, value)
 
+        if getattr(challenge, "flag_mode", None) == "random":
+            from .container_manager import pregenerate_teencode_flags_for_challenge
+            base_flag = challenge.flag_prefix + challenge.flag_suffix
+            pregenerate_teencode_flags_for_challenge(challenge, base_flag, count=100, how_many_teencode=int(len(base_flag)/2))
+
         return ContainerChallenge.calculate_value(challenge)
 
     @classmethod

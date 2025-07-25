@@ -274,28 +274,44 @@ def get_active_container(challenge_id, x_id):
 
 def get_container_flag(submitted_flag, user, container_manager, container_info, challenge):
     """
-    Fetches the ContainerFlagModel for the given submitted_flag.
-    Ensures the flag belongs to the user or team (in team mode).
-    If the flag was already used by another user/team, trigger a ban.
+    Checks flag submission and cheat detection logic:
+    - If the flag is not in the database: incorrect
+    - If team_id/user_id matches and used == 0: correct (mark as used)
+    - If team_id/user_id is None: incorrect
+    - Else (team_id/user_id not None and used != 0): cheated (call ban logic)
     """
-    if is_team_mode():
-        # In team mode, check if the flag belongs to the user's team
-        container_flag = ContainerFlagModel.query.filter_by(flag=submitted_flag).first()
-        if challenge.flag_mode == "random" and container_flag and container_flag.team_id != user.team_id:
-            # Flag belongs to another team and is reused → cheating detected
-            ban_team_and_original_owner(container_flag, user, container_manager, container_info)
-    else:
-        # In individual mode, check if the flag belongs to the user
-        container_flag = ContainerFlagModel.query.filter_by(flag=submitted_flag).first()
-        if challenge.flag_mode == "random" and container_flag and container_flag.user_id != user.id:
-            # Flag belongs to another user and is reused → cheating detected
-            ban_team_and_original_owner(container_flag, user, container_manager, container_info)
-
-    # If no flag is found, return incorrect flag error
+    container_flag = ContainerFlagModel.query.filter_by(flag=submitted_flag).first()
     if not container_flag:
         raise ValueError("Incorrect")
 
-    return container_flag
+    if is_team_mode():
+        # Team mode
+        if container_flag.team_id == user.team_id and not container_flag.used:
+            # Correct, mark as used
+            container_flag.used = True
+            db.session.commit()
+            return container_flag
+        elif container_flag.team_id is None:
+            # Flag not assigned
+            raise ValueError("Incorrect")
+        else:
+            # Cheating
+            ban_team_and_original_owner(container_flag, user, container_manager, container_info)
+            raise ValueError("Cheating detected")
+    else:
+        # User mode
+        if container_flag.user_id == user.id and not container_flag.used:
+            # Correct, mark as used
+            container_flag.used = True
+            db.session.commit()
+            return container_flag
+        elif container_flag.user_id is None:
+            # Flag not assigned
+            raise ValueError("Incorrect")
+        else:
+            # Cheating
+            ban_team_and_original_owner(container_flag, user, container_manager, container_info)
+            raise ValueError("Cheating detected")
 
 def get_fame_or_shame():
     """

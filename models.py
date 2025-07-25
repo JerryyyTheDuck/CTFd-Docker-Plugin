@@ -74,7 +74,7 @@ class ContainerFlagModel(db.Model):
     used = db.Column(db.Boolean, default=False)
 
     container = relationship(ContainerInfoModel, foreign_keys=[container_id])
-    challenge = relationship(ContainerChallengeModel, foreign_keys=[challenge_id])
+    challenge = relationship(ContainerChallengeModel, foreign_keys=[challenge_id], passive_deletes=True)
     user = relationship("Users", foreign_keys=[user_id])
     team = relationship("Teams", foreign_keys=[team_id])
 

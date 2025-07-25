@@ -189,21 +189,8 @@
 </div>
 
 <div class="form-group">
-	<label for="flag_prefix">Flag Prefix</label>
-	<input type="text" class="form-control" name="flag_prefix" id="flag_prefix"
-		value="{{ challenge.flag_prefix|default('CTF{') }}" />
-</div>
-
-<div class="form-group">
-	<label for="flag_suffix">Flag Suffix</label>
-	<input type="text" class="form-control" name="flag_suffix" id="flag_suffix"
-		value="{{ challenge.flag_suffix|default('}') }}" />
-</div>
-
-<div class="form-group">
-	<label for="random_flag_length">Random Flag Length</label>
-	<input type="number" class="form-control" name="random_flag_length" id="random_flag_length" min="1"
-		value="{{ challenge.random_flag_length|default(10) }}" />
+	<label for="flag_prefix">Flag</label>
+	<input type="text" class="form-control" id="flag_prefix" name="flag_prefix" placeholder="flag{" value="{{ challenge.flag_prefix }}" />
 </div>
 
 {% endblock %}

@@ -14,8 +14,98 @@ import requests
 from CTFd.models import db
 from .models import ContainerInfoModel, ContainerFlagModel, ContainerFlagModel
 
+teencode_dict = {
+    'a': ['a', 'A', '4', '@'],
+    'b': ['b', 'B', '|3'],
+    'c': ['c', 'C', '('],
+    'd': ['d', 'D'],
+    'e': ['e', 'E', '3'],
+    'f': ['f', 'F'],
+    'g': ['g', 'G', '9'],
+    'h': ['h', 'H', '#'],
+    'i': ['i', 'I', '1', '|'],
+    'j': ['j', 'J'],
+    'k': ['k', 'K'],
+    'l': ['l', 'L', '1', '|_'],
+    'm': ['m', 'M'],
+    'n': ['n', 'N'],
+    'o': ['o', 'O', '0'],
+    'p': ['p', 'P'],
+    'q': ['q', 'Q'],
+    'r': ['r', 'R'],
+    's': ['s', 'S', '5', '$'],
+    't': ['t', 'T', '7'],
+    'u': ['u', 'U'],
+    'v': ['v', 'V'],
+    'w': ['w', 'W'],
+    'x': ['x', 'X'],
+    'y': ['y', 'Y'],
+    'z': ['z', 'Z'],
+    '_': ['_', '-'],
+    '{': ['{'],
+    '}': ['}'],
+}
+
+# Reverse mapping for teencode: maps each teencode variant to its base letter
+reverse_teencode_dict = {}
+for base, variants in teencode_dict.items():
+    for v in variants:
+        reverse_teencode_dict[v] = base
 
 
+def generate_random_teencode(flag, how_many_teencode=8):
+    # Robustly split flag into prefix, body, and suffix using first '{' and last '}'
+    first_brace = flag.find('{')
+    last_brace = flag.rfind('}')
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        flag_prefix = flag[:first_brace+1]
+        flag_body = flag[first_brace+1:last_brace]
+        flag_suffix = flag[last_brace:]
+    else:
+        flag_prefix = ''
+        flag_body = flag
+        flag_suffix = ''
+
+    indices = list(range(len(flag_body)))
+    transform_indices = set(random.sample(indices, min(how_many_teencode, len(flag_body))))
+
+    new_chars = []
+    for i, char in enumerate(flag_body):
+        base_char = reverse_teencode_dict.get(char, char)
+        options = teencode_dict.get(base_char.lower(), [char])
+        if i in transform_indices:
+            filtered_options = [o for o in options if o != char]
+            if filtered_options:
+                new_chars.append(random.choice(filtered_options))
+            else:
+                new_chars.append(char)
+        else:
+            new_chars.append(char)
+    return flag_prefix + ''.join(new_chars)
+
+
+def generate_multiple_random_teencodes(flag, how_many_teencode=8, count=20):
+    """Generate multiple teencode flags from a base flag."""
+    return [generate_random_teencode(flag, how_many_teencode) for _ in range(count)]
+
+
+def pregenerate_teencode_flags_for_challenge(challenge, base_flag, count=100, how_many_teencode=8):
+    """
+    Pre-generate a set of teencode flags for a challenge and store them in the database.
+    Each flag is stored in ContainerFlagModel with only challenge_id and flag set.
+    """
+    from .models import ContainerFlagModel
+    from CTFd.models import db
+
+    teencode_flags = generate_multiple_random_teencodes(base_flag, how_many_teencode, count)
+    for flag in teencode_flags:
+        flag_entry = ContainerFlagModel(
+            challenge_id=challenge.id,
+            flag=flag
+        )
+        db.session.add(flag_entry)
+    db.session.commit()
+    return teencode_flags
 
 def generate_random_flag(challenge):
     """Generate a random flag with the given length and format"""
@@ -171,13 +261,27 @@ class ContainerManager:
 
     @run_command
     def create_container(self, challenge, xid, is_team):
+        from .models import ContainerFlagModel
+        from CTFd.models import db
+        import random
+
         kwargs = {}
 
-        flag = (
-            generate_random_flag(challenge)
-            if challenge.flag_mode == "random"
-            else challenge.flag_prefix + challenge.flag_suffix
+        teencode_flag_entry = (
+            ContainerFlagModel.query
+            .filter_by(challenge_id=challenge.id, container_id=None, used=False)
+            .order_by(db.func.random())
+            .first()
         )
+        if teencode_flag_entry:
+            flag = teencode_flag_entry.flag
+        else:
+            flag = (
+                generate_random_flag(challenge)
+                if challenge.flag_mode == "random"
+                else challenge.flag_prefix + challenge.flag_suffix
+            )
+            teencode_flag_entry = None
 
         if self.settings.get("container_maxmemory"):
             try:
@@ -234,16 +338,23 @@ class ContainerManager:
             db.session.add(new_container_entry)
             db.session.commit()
 
-            # Save the flag in the database
-            new_flag_entry = ContainerFlagModel(
-                challenge_id=challenge.id,
-                container_id=container.id,
-                flag=flag,
-                team_id=xid if is_team else None,
-                user_id=None if is_team else xid,
-            )
-            db.session.add(new_flag_entry)
-            db.session.commit()
+            # Assign the flag entry to this container and user/team
+            if teencode_flag_entry:
+                teencode_flag_entry.container_id = container.id
+                teencode_flag_entry.team_id = xid if is_team else None
+                teencode_flag_entry.user_id = None if is_team else xid
+                db.session.commit()
+            else:
+                # Save the fallback flag in the database
+                new_flag_entry = ContainerFlagModel(
+                    challenge_id=challenge.id,
+                    container_id=container.id,
+                    flag=flag,
+                    team_id=xid if is_team else None,
+                    user_id=None if is_team else xid,
+                )
+                db.session.add(new_flag_entry)
+                db.session.commit()
 
             return {"container": container, "expires": expires, "port": port}
         except docker.errors.ImageNotFound:
@@ -341,12 +452,13 @@ class ContainerManager:
                     db.session.delete(f)
             else:
                 for f in used_flags:
-                    if f.used:
-                        # Keep this flag, but remove its container reference
-                        f.container_id = None
-                    else:
-                        # If the flag wasn't used, delete it
-                        db.session.delete(f)
+                    # Reset flag assignment so it can be reused
+                    f.container_id = None
+                    f.team_id = None
+                    f.user_id = None
+                    if not f.used:
+                        f.used = False
+            db.session.commit()
 
         except docker.errors.NotFound:
             pass

@@ -1,56 +1,67 @@
-# CTFd Docker Containers Plugin
+# CTFd Containers Plugin
 
 <div align="center">
-  <h3 align="center">CTFd Docker Containers Plugin</h3>
+  <h3 align="center">CTFd Containers Plugin</h3>
   <p align="center">
-    A plugin to create containerized challenges for your CTF contest.
+    A plugin for CTFd to create secure, containerized challenges with advanced per-instance flag management and anti-cheat features.
   </p>
 </div>
 
-## Table of Contents
-1. [Getting Started](#getting-started)
-   - [Prerequisites](#prerequisites)
-   - [Installation](#installation)
-2. [Usage](#usage)
-   - [Using Local Docker Daemon](#using-local-docker-daemon)
-   - [Using Remote Docker via SSH](#using-remote-docker-via-ssh)
-3. [Demo](#demo)
-4. [Roadmap](#roadmap)
-5. [License](#license)
-6. [Contact](#contact)
+## Features
 
----
+- **Per-Instance Teencode Flags:**
+  - This feature is inspired by GPNCTF
+  - When an admin creates a challenge, a pool of unique teencode-style flags is pre-generated and stored in the database.
+  - When a user/team creates a container instance, a random unused flag from the pool is assigned to them.
+  - Flags are generated using a customizable teencode mapping, supporting diverse and obfuscated flag variants.
+
+- **Anti-Cheat Detection:**
+  - If a user/team submits a flag assigned to another user/team, the system detects cheating and logs the incident.
+  - Flags can only be used by the user/team they are assigned to, and only once.
+  - Cheating attempts can trigger bans or notifications as configured.
+
+- **Automatic Flag Reuse Prevention:**
+  - When a user/team terminates an instance, the flag assignment is reset, allowing the flag to be reassigned if unused.
+  - Flags are never reused across users/teams unless explicitly allowed by the admin.
+
+- **Admin & User Workflows:**
+  - Admins can create challenges with a single flag input (no suffix needed).
+  - Flags are automatically teencode-variant generated and managed.
+  - Users get a unique flag per instance, and cannot share or reuse flags.
+
+- **Container Management:**
+  - Supports both local and remote Docker daemons (via SSH).
+  - Admin dashboard for monitoring and managing running containers.
+  - Per-challenge and per-user/team container tracking.
+
+- **UI Improvements:**
+  - Clean challenge creation/update forms (no flag suffix field).
+  - Real-time feedback for flag submission and cheating detection.
 
 ## Getting Started
 
-This section provides instructions for setting up the project locally.
-
 ### Prerequisites
-
-To use this plugin, you should have:
-- Experience hosting CTFd with Docker
-- Basic knowledge of Docker
-- SSH access to remote servers (if using remote Docker)
+- CTFd instance (Docker or direct)
+- Docker (local or remote)
+- (Optional) SSH access for remote Docker
 
 ### Installation
-
-1. **Clone this repository:**
+1. Clone this repository:
    ```bash
    git clone https://github.com/JerryyyTheDuck/CTFd-Docker-Plugin.git
    ```
-2. **Rename the folder:**
+2. Move the folder to the CTFd plugins directory:
    ```bash
    mv CTFd-Docker-Plugin containers
-   ```
-3. **Move the folder to the CTFd plugins directory:**
-   ```bash
    mv containers /path/to/CTFd/plugins/
    ```
 
-[Back to top](#ctfd-docker-containers-plugin)
----
-
-## Usage
+### Usage
+- Go to the plugin settings page: `/containers/settings`
+- Create a new challenge. Enter your flag in the "Flag" field (no suffix needed).
+- The system will automatically generate a pool of teencode flags for the challenge.
+- When users create an instance, they are assigned a unique flag from the pool.
+- If a user submits a flag not assigned to them, or reuses a flag, cheating is detected and logged.
 
 ### Using Local Docker Daemon
 
@@ -58,7 +69,8 @@ To use this plugin, you should have:
   - Go to the plugin settings page: `/containers/settings`
   - Fill in all fields except the `Base URL`.
 
-  ![Settings Example](./image-readme/1.png)
+ ![image](https://hackmd.io/_uploads/rkwpKrbPel.png)
+
 
 #### Case B: **CTFd Running via Docker:**
   - Map the Docker socket into the CTFd container by modify the `docker-compose.yml` file:
@@ -126,53 +138,50 @@ For remote Docker, the CTFd host must have SSH access to the remote server.
    sudo systemctl restart ctfd
    ```
 
-[Back to top](#ctfd-docker-containers-plugin)
 
----
 
 ## Demo
 
 ### Admin Dashboard
 - Manage running containers
-- Filter by challenge or player
 
-![Manage Containers](./image-readme/manage.png)
+![image](https://hackmd.io/_uploads/Hyg-9BbPxg.png)
+
+- Monitor flag assignments and cheating attempts
+
+![image](https://hackmd.io/_uploads/HJWQiS-wgg.png)
+
+
 
 ### Challenge View
+- Users receive a unique teencode flag per instance
 
-**Web Access** | **TCP Access**
-:-------------:|:-------------:
-![Web](./image-readme/http.png) | ![TCP](./image-readme/tcp.png)
+![image](https://hackmd.io/_uploads/r1mP5SWPex.png)
 
-### Live Demo
+- User can spawn and extend the instance if they want
 
-![Live Demo](./image-readme/demo.gif)
+![image](https://hackmd.io/_uploads/rJcaiSWPgx.png)
 
-[Back to top](#ctfd-docker-containers-plugin)
+- Cheating attempts are detected and handled automatically. If user are detected as cheating, their POV will be below
 
----
+![image](https://hackmd.io/_uploads/HkDa5Hbwxe.png)
+
+![image](https://hackmd.io/_uploads/HkrCcSZvge.png)
+
+### Fame or shame notification
+
+![image](https://hackmd.io/_uploads/B1GZjBbPgx.png)
 
 ## Roadmap
-
-- [x] Support for user mode
-- [x] Admin dashboard with team/user filtering
-- [x] Compatibility with the core-beta theme
-- [x] Monitor share flag 
-- [x] Monitor detail on share flag 
-- [x] Prevent container creation on solved challenge
-- [x] Add in Fame or shame 
-
-For more features and known issues, check the [open issues](https://github.com/JerryyyTheDuck/CTFd-Docker-Plugin/issues).
-
-[Back to top](#ctfd-docker-containers-plugin)
-
----
+- [x] Per-instance teencode flag assignment
+- [x] Anti-cheat detection and logging
+- [x] Admin dashboard for container and flag management
+- [x] Clean UI for challenge creation/update
+- [x] Support for both user and team modes
+- [x] Fame or shame announcement
 
 ## License
-
 Distributed under the MIT License. See `LICENSE.txt` for details.
 
-> This plugin is an upgrade of [andyjsmith's plugin](https://github.com/andyjsmith/CTFd-Docker-Plugin) with additional features from [phannhat17](https://github.com/phannhat17/CTFd-Docker-Plugin).
-
-[Back to top](#ctfd-docker-containers-plugin)
+> This plugin is an upgrade of [andyjsmith's plugin](https://github.com/andyjsmith/CTFd-Docker-Plugin) with additional features from [phannhat17](https://github.com/phannhat17/CTFd-Docker-Plugin) and major improvements for secure, per-instance flag management.
 
